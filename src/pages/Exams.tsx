@@ -465,8 +465,8 @@ export default function Exams() {
     const className = classes.find(c => c.id === reportClassId)?.name || '';
     const examType = reportExamType.replace('_', ' ').toUpperCase();
     
-    // Create CSV headers
-    const headers = ['Student Name', 'Roll No', ...reportExams.map(exam => exam.subject), 'Total', 'Average', 'CGPA (5.00)'];
+    // Create CSV headers with individual subject CGPA columns
+    const headers = ['Student Name', 'Roll No', ...reportExams.flatMap(exam => [`${exam.subject} - Marks`, `${exam.subject} - CGPA`]), 'Total', 'Average', 'CGPA (5.00)'];
     
     // Create CSV data
     const csvData = students
@@ -474,14 +474,32 @@ export default function Exams() {
       .map(student => {
         const studentResults = reportResults.filter(r => r.studentId === student.id);
         let total = 0;
-        const marks = reportExams.map(exam => {
+        const subjectData = reportExams.flatMap(exam => {
           const result = studentResults.find(r => r.examId === exam.id);
           if (result) total += result.marksObtained;
-          return result ? result.marksObtained : '-';
+          const grade = result ? calculateGrade(result.marksObtained, exam.totalMarks, exam.type) : 'F';
+          const isFailed = grade === 'F';
+          const subjectCGPA = isFailed ? 'Failed' : (() => {
+            const gradePoints: { [key: string]: number } = {
+              'A+': 5.0,
+              'A': 4.5,
+              'A-': 4.0,
+              'B': 3.5,
+              'C': 3.0,
+              'D': 2.0,
+              'F': 0.0
+            };
+            return gradePoints[grade]?.toFixed(2) || '0.00';
+          })();
+          
+          return [
+            result ? result.marksObtained : '-',
+            subjectCGPA
+          ];
         });
         const average = reportExams.length > 0 ? (total / reportExams.length).toFixed(1) : '0.0';
         
-        // Calculate CGPA
+        // Calculate overall CGPA
         const studentGrades = reportExams.map(exam => {
           const result = studentResults.find(r => r.examId === exam.id);
           if (!result) return 'F';
@@ -489,7 +507,7 @@ export default function Exams() {
         });
         const cgpa = calculateCGPA(studentGrades).toFixed(2);
         
-        return [student.name, student.rollNumber, ...marks, total, average, cgpa];
+        return [student.name, student.rollNumber, ...subjectData, total, average, cgpa];
       });
     
     // Create CSV content
@@ -703,16 +721,24 @@ export default function Exams() {
                         <Table className="print:w-full print:text-black print:table-fixed">
                           <TableHeader className="bg-sidebar-accent/30 print:bg-gray-100">
                             <TableRow className="border-border hover:bg-transparent print:border-gray-300">
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase min-w-[120px] print:text-black print:border print:border-gray-300 print:font-bold">Student Name</TableHead>
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">Roll No</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase min-w-[120px] print:text-black print:border print:border-gray-300 print:font-bold" rowSpan="2">Student Name</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold" rowSpan="2">Roll No</TableHead>
                               {reportExams.map(exam => (
-                                <TableHead key={exam.id} className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">
+                                <TableHead key={exam.id} className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold" colSpan="2">
                                   <div className="print:whitespace-normal print:break-words">{exam.subject}</div>
                                 </TableHead>
                               ))}
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">Total</TableHead>
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-right print:text-black print:border print:border-gray-300 print:font-bold">Average</TableHead>
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">CGPA (5.00)</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold" rowSpan="2">Total</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-right print:text-black print:border print:border-gray-300 print:font-bold" rowSpan="2">Average</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold" rowSpan="2">CGPA (5.00)</TableHead>
+                            </TableRow>
+                            <TableRow className="border-border hover:bg-transparent print:border-gray-300">
+                              {reportExams.map(exam => (
+                                <React.Fragment key={`${exam.id}-subheads`}>
+                                  <TableHead className="text-[10px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">Marks</TableHead>
+                                  <TableHead className="text-[10px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">CGPA</TableHead>
+                                </React.Fragment>
+                              ))}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -728,10 +754,34 @@ export default function Exams() {
                                     {reportExams.map(exam => {
                                       const result = studentResults.find(r => r.examId === exam.id);
                                       if (result) total += result.marksObtained;
+                                      const grade = result ? calculateGrade(result.marksObtained, exam.totalMarks, exam.type) : 'F';
+                                      const isFailed = grade === 'F';
+                                      const subjectCGPA = isFailed ? 'Failed' : (() => {
+                                        const gradePoints: { [key: string]: number } = {
+                                          'A+': 5.0,
+                                          'A': 4.5,
+                                          'A-': 4.0,
+                                          'B': 3.5,
+                                          'C': 3.0,
+                                          'D': 2.0,
+                                          'F': 0.0
+                                        };
+                                        return gradePoints[grade]?.toFixed(2) || '0.00';
+                                      })();
+                                      
                                       return (
-                                        <TableCell key={exam.id} className="text-sm text-sidebar-foreground text-center print:text-black print:border print:border-gray-200 print:font-normal">
-                                          {result ? result.marksObtained : '-'}
-                                        </TableCell>
+                                        <React.Fragment key={exam.id}>
+                                          <TableCell className={`text-sm text-center print:text-black print:border print:border-gray-200 print:font-normal ${
+                                            isFailed ? 'text-rose-500 font-bold' : 'text-sidebar-foreground'
+                                          }`}>
+                                            {result ? result.marksObtained : '-'}
+                                          </TableCell>
+                                          <TableCell className={`text-sm text-center print:text-black print:border print:border-gray-200 print:font-normal ${
+                                            isFailed ? 'text-rose-500 font-bold' : 'text-emerald-500 font-medium'
+                                          }`}>
+                                            {subjectCGPA}
+                                          </TableCell>
+                                        </React.Fragment>
                                       );
                                     })}
                                     <TableCell className="text-sm text-white font-bold text-center print:text-black print:border print:border-gray-200 print:font-bold">{total}</TableCell>
