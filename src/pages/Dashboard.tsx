@@ -23,7 +23,8 @@ import {
   Line,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Legend
 } from 'recharts';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/src/lib/firebase';
@@ -188,33 +189,54 @@ export default function Dashboard() {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     const currentYear = new Date().getFullYear();
     const monthlyStats = months.map((month, index) => {
+      // Filter students admitted in this month
       const monthStudents = students.filter(student => {
         if (student.admissionDate) {
-          const admissionMonth = new Date(student.admissionDate).getMonth();
-          return admissionMonth === index;
+          const admissionDate = new Date(student.admissionDate);
+          const admissionMonth = admissionDate.getMonth();
+          const admissionYear = admissionDate.getFullYear();
+          return admissionMonth === index && admissionYear === currentYear;
         }
         return false;
       });
       
+      // Filter fees paid in this month
       const monthFees = fees.filter(fee => {
-        if (fee.date) {
-          const feeMonth = new Date(fee.date).getMonth();
-          return feeMonth === index && fee.status === 'paid';
+        if (fee.date && fee.status === 'paid') {
+          const feeDate = new Date(fee.date);
+          const feeMonth = feeDate.getMonth();
+          const feeYear = feeDate.getFullYear();
+          return feeMonth === index && feeYear === currentYear;
         }
         return false;
       });
       
+      // Calculate total revenue for this month
       const monthlyRevenue = monthFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+      
+      // Calculate attendance rate for this month
+      const monthAttendance = attendance.filter(att => {
+        if (att.date) {
+          const attDate = new Date(att.date);
+          return attDate.getMonth() === index && attDate.getFullYear() === currentYear;
+        }
+        return false;
+      });
+      
+      const attendanceRate = monthAttendance.length > 0 
+        ? (monthAttendance.filter(att => att.status === 'present').length / monthAttendance.length * 100).toFixed(1)
+        : '0';
       
       return {
         name: month,
-        students: monthStudents.length || Math.floor(Math.random() * 50) + 400, // Fallback for demo
-        revenue: monthlyRevenue || Math.floor(Math.random() * 1000) + 2000 // Fallback for demo
+        students: monthStudents.length,
+        revenue: monthlyRevenue,
+        attendanceRate: parseFloat(attendanceRate)
       };
     });
     
     setMonthlyData(monthlyStats);
-  }, [students, fees]);
+  }, [students, fees, attendance]);
 
   const StatCard = ({ title, value, trend, color, trendDown }: any) => (
     <Card className="bg-card border-border rounded-xl p-5 flex flex-col shadow-none">
@@ -265,7 +287,7 @@ export default function Dashboard() {
               <span className="text-[11px] text-sidebar-foreground">Last 6 Months</span>
             </div>
             <div className="flex-1">
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
@@ -274,6 +296,13 @@ export default function Dashboard() {
                     axisLine={{ stroke: '#374151' }}
                   />
                   <YAxis 
+                    yAxisId="left"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    axisLine={{ stroke: '#374151' }}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
                     tick={{ fill: '#9CA3AF', fontSize: 12 }}
                     axisLine={{ stroke: '#374151' }}
                   />
@@ -285,18 +314,42 @@ export default function Dashboard() {
                       color: '#F3F4F6'
                     }}
                     labelStyle={{ color: '#F3F4F6', fontWeight: 'bold' }}
+                    formatter={(value, name) => {
+                      if (name === 'students') return [`${value} students`, 'Students'];
+                      if (name === 'revenue') return [`৳${value.toLocaleString()}`, 'Revenue'];
+                      if (name === 'attendanceRate') return [`${value}%`, 'Attendance Rate'];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: '#9CA3AF' }}
+                    iconType="rect"
                   />
                   <Bar 
+                    yAxisId="left"
                     dataKey="students" 
                     fill="#3B82F6"
                     radius={[8, 8, 0, 0]}
                     animationDuration={1000}
+                    name="Students"
                   />
                   <Bar 
+                    yAxisId="right"
                     dataKey="revenue" 
                     fill="#10B981"
                     radius={[8, 8, 0, 0]}
                     animationDuration={1200}
+                    name="Revenue (৳)"
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="attendanceRate"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    dot={{ fill: '#F59E0B', r: 4 }}
+                    animationDuration={800}
+                    name="Attendance %"
                   />
                 </BarChart>
               </ResponsiveContainer>
