@@ -32,15 +32,6 @@ import { format, formatDistanceToNow } from 'date-fns';
 
 import { cn } from '@/lib/utils';
 
-const data = [
-  { name: 'Jan', students: 400, revenue: 2400 },
-  { name: 'Feb', students: 420, revenue: 2600 },
-  { name: 'Mar', students: 450, revenue: 2800 },
-  { name: 'Apr', students: 480, revenue: 3200 },
-  { name: 'May', students: 500, revenue: 3500 },
-  { name: 'Jun', students: 510, revenue: 3800 },
-];
-
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function Dashboard() {
@@ -184,6 +175,13 @@ export default function Dashboard() {
 
   const stats = calculateStats();
 
+  const toJSDate = (v: any): Date | null => {
+    if (!v) return null;
+    if (typeof v?.toDate === 'function') return v.toDate();
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
   // Generate monthly data for charts
   useEffect(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -191,13 +189,9 @@ export default function Dashboard() {
     const monthlyStats = months.map((month, index) => {
       // Filter students admitted in this month
       const monthStudents = students.filter(student => {
-        if (student.admissionDate) {
-          const admissionDate = new Date(student.admissionDate);
-          const admissionMonth = admissionDate.getMonth();
-          const admissionYear = admissionDate.getFullYear();
-          return admissionMonth === index && admissionYear === currentYear;
-        }
-        return false;
+        const dt = toJSDate(student.admissionDate ?? student.createdAt);
+        if (!dt) return false;
+        return dt.getMonth() === index && dt.getFullYear() === currentYear;
       });
       
       // Filter fees paid in this month
