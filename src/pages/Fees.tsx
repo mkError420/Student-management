@@ -267,22 +267,6 @@ export default function Fees() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'fees'), orderBy('date', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const feeData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        const student = students.find(s => s.id === data.studentId);
-        const cls = classes.find(c => c.id === data.classId);
-        return {
-          id: doc.id,
-          ...data,
-          rollNumber: student?.rollNumber || '',
-          className: cls ? `${cls.name} - ${cls.section}` : 'Unknown Class'
-        } as FeeRecord;
-      });
-      setFees(feeData);
-    });
-
     const studentsQuery = query(collection(db, 'students'), orderBy('name'));
     const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
       const studentData = snapshot.docs.map(doc => ({
@@ -304,11 +288,35 @@ export default function Fees() {
     });
 
     return () => {
-      unsubscribe();
       unsubscribeStudents();
       unsubscribeClasses();
     };
   }, []);
+
+  // Separate useEffect for fees that depends on students and classes
+  useEffect(() => {
+    if (students.length === 0 || classes.length === 0) return;
+
+    const q = query(collection(db, 'fees'), orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const feeData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const student = students.find(s => s.id === data.studentId);
+        const cls = classes.find(c => c.id === data.classId);
+        return {
+          id: doc.id,
+          ...data,
+          rollNumber: student?.rollNumber || '',
+          className: cls ? `${cls.name} - ${cls.section}` : 'Unknown Class'
+        } as FeeRecord;
+      });
+      setFees(feeData);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [students, classes]);
 
   const handleAddFee = async (e: React.FormEvent) => {
     e.preventDefault();
