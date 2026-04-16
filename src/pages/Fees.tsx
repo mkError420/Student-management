@@ -668,7 +668,12 @@ export default function Fees() {
             <div className="flex items-center gap-3 flex-wrap">
               <Select value={selectedClass} onValueChange={setSelectedClass}>
                 <SelectTrigger className="w-[140px] h-9 bg-background border-border text-foreground">
-                  <SelectValue placeholder="All Classes" />
+                  <SelectValue placeholder="All Classes">
+                    {selectedClass === 'all' ? 'All Classes' : 
+                     classes.find(c => c.id === selectedClass) ? 
+                     `${classes.find(c => c.id === selectedClass)?.name} - ${classes.find(c => c.id === selectedClass)?.section}` : 
+                     'Select Class'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
                   <SelectItem value="all">All Classes</SelectItem>
