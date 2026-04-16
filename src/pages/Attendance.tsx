@@ -31,6 +31,18 @@ import { collection, onSnapshot, query, where, addDoc, getDocs, orderBy } from '
 import { db } from '@/src/lib/firebase';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Line,
+  ComposedChart
+} from 'recharts';
 
 interface Student {
   id: string;
@@ -52,6 +64,8 @@ export default function Attendance() {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent' | 'late'>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
+  const [attendanceTrend, setAttendanceTrend] = useState<any[]>([]);
 
   useEffect(() => {
     const classesQuery = query(collection(db, 'classes'), orderBy('name'));
@@ -85,6 +99,59 @@ export default function Attendance() {
     });
     return () => unsubscribe();
   }, [selectedClass]);
+
+  useEffect(() => {
+    if (!selectedClass) return;
+    const attQuery = query(
+      collection(db, 'attendance'),
+      where('classId', '==', selectedClass),
+      orderBy('date', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(attQuery, (snapshot) => {
+      const records = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAttendanceRecords(records);
+    });
+
+    return () => unsubscribe();
+  }, [selectedClass]);
+
+  useEffect(() => {
+    if (!selectedClass) return;
+
+    const days = 30;
+    const today = new Date();
+    const range: string[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      range.push(format(d, 'yyyy-MM-dd'));
+    }
+
+    const trend = range.map((day) => {
+      const dayRecords = attendanceRecords.filter(r => r.date === day);
+      const total = dayRecords.length;
+      const present = dayRecords.filter(r => r.status === 'present').length;
+      const absent = dayRecords.filter(r => r.status === 'absent').length;
+      const late = dayRecords.filter(r => r.status === 'late').length;
+      const presentRate = total > 0 ? (present / total) * 100 : 0;
+
+      return {
+        date: day,
+        day: format(new Date(day), 'MMM dd'),
+        present,
+        absent,
+        late,
+        total,
+        presentRate: Number(presentRate.toFixed(1))
+      };
+    });
+
+    setAttendanceTrend(trend);
+  }, [attendanceRecords, selectedClass]);
 
   const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
     setAttendance(prev => ({ ...prev, [studentId]: status }));
@@ -203,6 +270,77 @@ export default function Attendance() {
               <Save className="w-4 h-4 mr-2" />
               {isSaving ? 'Saving...' : 'Save Attendance'}
             </Button>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-xl border border-border p-5 shadow-none">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-white">Attendance Overview</h2>
+              <p className="text-xs text-sidebar-foreground">Last 30 days • Class-wise trend</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            {(() => {
+              const flat = attendanceTrend.reduce(
+                (acc, d) => ({
+                  total: acc.total + d.total,
+                  present: acc.present + d.present,
+                  absent: acc.absent + d.absent,
+                  late: acc.late + d.late
+                }),
+                { total: 0, present: 0, absent: 0, late: 0 }
+              );
+              const presentPct = flat.total ? ((flat.present / flat.total) * 100).toFixed(1) : '0.0';
+              const absentPct = flat.total ? ((flat.absent / flat.total) * 100).toFixed(1) : '0.0';
+              const latePct = flat.total ? ((flat.late / flat.total) * 100).toFixed(1) : '0.0';
+
+              return (
+                <>
+                  <div className="bg-sidebar-accent/20 rounded-lg border border-border p-4">
+                    <p className="text-[11px] text-sidebar-foreground">Total Marked</p>
+                    <p className="text-xl font-bold text-white">{flat.total}</p>
+                  </div>
+                  <div className="bg-emerald-500/10 rounded-lg border border-emerald-500/20 p-4">
+                    <p className="text-[11px] text-sidebar-foreground">Present</p>
+                    <p className="text-xl font-bold text-emerald-400">{presentPct}%</p>
+                  </div>
+                  <div className="bg-rose-500/10 rounded-lg border border-rose-500/20 p-4">
+                    <p className="text-[11px] text-sidebar-foreground">Absent</p>
+                    <p className="text-xl font-bold text-rose-400">{absentPct}%</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-lg border border-amber-500/20 p-4">
+                    <p className="text-[11px] text-sidebar-foreground">Late</p>
+                    <p className="text-xl font-bold text-amber-400">{latePct}%</p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={attendanceTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="day" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={{ stroke: '#374151' }} />
+                <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={{ stroke: '#374151' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    color: '#F3F4F6'
+                  }}
+                  labelStyle={{ color: '#F3F4F6', fontWeight: 'bold' }}
+                />
+                <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 11 }} />
+                <Bar dataKey="present" name="Present" stackId="a" fill="#10B981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="absent" name="Absent" stackId="a" fill="#EF4444" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="late" name="Late" stackId="a" fill="#F59E0B" radius={[6, 6, 0, 0]} />
+                <Line type="monotone" dataKey="presentRate" name="Present %" stroke="#3B82F6" strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
