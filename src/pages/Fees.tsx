@@ -210,6 +210,10 @@ const printStyles = `
 interface FeeRecord {
   id: string;
   studentName: string;
+  studentId: string;
+  rollNumber: string;
+  classId: string;
+  className: string;
   amount: number;
   type: string;
   status: 'paid' | 'pending' | 'overdue';
@@ -251,6 +255,7 @@ export default function Fees() {
   const [selectedFee, setSelectedFee] = useState<FeeRecord | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
   const [newFee, setNewFee] = useState({
     studentId: '',
     studentName: '',
@@ -264,10 +269,17 @@ export default function Fees() {
   useEffect(() => {
     const q = query(collection(db, 'fees'), orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const feeData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as FeeRecord[];
+      const feeData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const student = students.find(s => s.id === data.studentId);
+        const cls = classes.find(c => c.id === data.classId);
+        return {
+          id: doc.id,
+          ...data,
+          rollNumber: student?.rollNumber || '',
+          className: cls ? `${cls.name} - ${cls.section}` : 'Unknown Class'
+        } as FeeRecord;
+      });
       setFees(feeData);
     });
 
@@ -302,8 +314,13 @@ export default function Fees() {
     e.preventDefault();
     try {
       await addDoc(collection(db, 'fees'), {
-        ...newFee,
+        studentId: newFee.studentId,
+        classId: newFee.classId,
+        studentName: newFee.studentName,
         amount: parseFloat(newFee.amount),
+        type: newFee.type,
+        status: newFee.status,
+        date: newFee.date,
         createdAt: new Date().toISOString()
       });
       setIsAddDialogOpen(false);
@@ -405,6 +422,10 @@ export default function Fees() {
         <div class="space-y-1">
           <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider">Student Name</p>
           <p class="text-sm font-semibold text-white">${selectedFee.studentName}</p>
+          <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider mt-2">Class</p>
+          <p class="text-sm font-semibold text-white">${selectedFee.className}</p>
+          <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider mt-2">Roll Number</p>
+          <p class="text-sm font-semibold text-white">${selectedFee.rollNumber}</p>
         </div>
         <div class="space-y-1 text-right">
           <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider">Payment Date</p>
@@ -447,9 +468,12 @@ export default function Fees() {
 
   const filteredFees = fees.filter(fee => {
     const matchesSearch = fee.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         fee.type.toLowerCase().includes(searchTerm.toLowerCase());
+                         fee.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         fee.rollNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         fee.className.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === 'all' || fee.type === selectedType;
-    return matchesSearch && matchesType;
+    const matchesClass = selectedClass === 'all' || fee.classId === selectedClass;
+    return matchesSearch && matchesType && matchesClass;
   });
 
   const stats = {
@@ -641,9 +665,22 @@ export default function Fees() {
               <History className="w-4 h-4 mr-2 text-primary" />
               Recent Transactions
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-[140px] h-9 bg-background border-border text-foreground">
+                  <SelectValue placeholder="All Classes" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.name} - {cls.section}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-[160px] h-9 bg-background border-border text-foreground">
+                <SelectTrigger className="w-[140px] h-9 bg-background border-border text-foreground">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
@@ -657,7 +694,7 @@ export default function Fees() {
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sidebar-foreground" />
                 <Input 
-                  placeholder="Search transactions..." 
+                  placeholder="Search by name, roll, class..." 
                   className="pl-10 h-9 bg-background border-border text-foreground" 
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
@@ -669,6 +706,8 @@ export default function Fees() {
             <TableHeader className="bg-sidebar-accent/30">
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="font-semibold text-sidebar-foreground">Date</TableHead>
+                <TableHead className="font-semibold text-sidebar-foreground">Class</TableHead>
+                <TableHead className="font-semibold text-sidebar-foreground">Roll No.</TableHead>
                 <TableHead className="font-semibold text-sidebar-foreground">Student</TableHead>
                 <TableHead className="font-semibold text-sidebar-foreground">Fee Type</TableHead>
                 <TableHead className="font-semibold text-sidebar-foreground">Amount</TableHead>
@@ -681,6 +720,8 @@ export default function Fees() {
                 filteredFees.map((fee) => (
                   <TableRow key={fee.id} className="border-border hover:bg-sidebar-accent/20 transition-colors">
                     <TableCell className="text-sidebar-foreground">{format(new Date(fee.date), 'MMM dd, yyyy')}</TableCell>
+                    <TableCell className="text-sidebar-foreground text-sm">{fee.className}</TableCell>
+                    <TableCell className="text-sidebar-foreground font-mono text-sm">{fee.rollNumber}</TableCell>
                     <TableCell className="font-semibold text-white">{fee.studentName}</TableCell>
                     <TableCell className="capitalize text-sidebar-foreground">{fee.type}</TableCell>
                     <TableCell className="font-medium text-white">৳{fee.amount.toFixed(2)}</TableCell>
@@ -745,7 +786,7 @@ export default function Fees() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-sidebar-foreground">
+                  <TableCell colSpan={8} className="h-24 text-center text-sidebar-foreground">
                     No transactions found.
                   </TableCell>
                 </TableRow>
