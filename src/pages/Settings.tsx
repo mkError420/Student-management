@@ -42,7 +42,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { doc, updateDoc, getDoc, setDoc, collection } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, collection, getDocs, query as firestoreQuery } from 'firebase/firestore';
 import { db } from '@/src/lib/firebase';
 import { updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '@/src/lib/firebase';
@@ -234,8 +234,12 @@ export default function Settings() {
       
       for (let i = 0; i < collections.length; i++) {
         const collectionName = collections[i];
-        const querySnapshot = await getDoc(doc(db, 'backups', collectionName));
-        backupData[collectionName] = querySnapshot.data();
+        const q = firestoreQuery(collection(db, collectionName));
+        const querySnapshot = await getDocs(q);
+        backupData[collectionName] = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
         setBackupProgress(((i + 1) / collections.length) * 100);
       }
       
@@ -266,8 +270,12 @@ export default function Settings() {
       const exportData: any = {};
       
       for (const collectionName of collections) {
-        const querySnapshot = await getDoc(doc(db, 'exports', collectionName));
-        exportData[collectionName] = querySnapshot.data();
+        const q = firestoreQuery(collection(db, collectionName));
+        const querySnapshot = await getDocs(q);
+        exportData[collectionName] = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
       }
       
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
