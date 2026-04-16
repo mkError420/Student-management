@@ -172,12 +172,46 @@ export default function Payroll() {
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!newStaff.name.trim()) {
+      toast.error('Please enter staff name');
+      return;
+    }
+    if (!newStaff.email.trim()) {
+      toast.error('Please enter email address');
+      return;
+    }
+    if (!newStaff.role) {
+      toast.error('Please select a role');
+      return;
+    }
+    if (!newStaff.department) {
+      toast.error('Please select a department');
+      return;
+    }
+    if (newStaff.baseSalary <= 0) {
+      toast.error('Please enter a valid base salary');
+      return;
+    }
+    if (!newStaff.joinDate) {
+      toast.error('Please select a join date');
+      return;
+    }
+    
     try {
-      await addDoc(collection(db, 'staff'), {
-        ...newStaff,
+      const staffData = {
+        name: newStaff.name.trim(),
+        email: newStaff.email.trim(),
+        role: newStaff.role,
+        department: newStaff.department,
         baseSalary: Number(newStaff.baseSalary),
+        joinDate: newStaff.joinDate,
+        status: newStaff.status,
         createdAt: new Date().toISOString()
-      });
+      };
+      
+      await addDoc(collection(db, 'staff'), staffData);
       setIsStaffDialogOpen(false);
       setNewStaff({
         name: '',
@@ -191,7 +225,7 @@ export default function Payroll() {
       toast.success('Staff member added successfully');
     } catch (error) {
       console.error('Error adding staff:', error);
-      toast.error('Failed to add staff member');
+      toast.error('Failed to add staff member. Please try again.');
     }
   };
 
@@ -363,7 +397,9 @@ export default function Payroll() {
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-sidebar-foreground">Name</Label>
+                        <Label className="text-sm font-medium text-sidebar-foreground">
+                          Name <span className="text-rose-500">*</span>
+                        </Label>
                         <Input 
                           required 
                           value={newStaff.name} 
@@ -373,7 +409,9 @@ export default function Payroll() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-sidebar-foreground">Email</Label>
+                        <Label className="text-sm font-medium text-sidebar-foreground">
+                          Email <span className="text-rose-500">*</span>
+                        </Label>
                         <Input 
                           type="email"
                           required 
@@ -386,10 +424,12 @@ export default function Payroll() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-sidebar-foreground">Role</Label>
+                        <Label className="text-sm font-medium text-sidebar-foreground">
+                          Role <span className="text-rose-500">*</span>
+                        </Label>
                         <Select value={newStaff.role} onValueChange={(val) => setNewStaff({...newStaff, role: val})}>
                           <SelectTrigger className="w-full bg-background border-border">
-                            <SelectValue placeholder="Select role" />
+                            <SelectValue placeholder="Select role *" />
                           </SelectTrigger>
                           <SelectContent className="bg-card border-border">
                             <SelectItem value="teacher">Teacher</SelectItem>
@@ -401,10 +441,12 @@ export default function Payroll() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-sidebar-foreground">Department</Label>
+                        <Label className="text-sm font-medium text-sidebar-foreground">
+                          Department <span className="text-rose-500">*</span>
+                        </Label>
                         <Select value={newStaff.department} onValueChange={(val) => setNewStaff({...newStaff, department: val})}>
                           <SelectTrigger className="w-full bg-background border-border">
-                            <SelectValue placeholder="Select department" />
+                            <SelectValue placeholder="Select department *" />
                           </SelectTrigger>
                           <SelectContent className="bg-card border-border">
                             <SelectItem value="academics">Academics</SelectItem>
@@ -418,7 +460,9 @@ export default function Payroll() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-sidebar-foreground">Base Salary ($)</Label>
+                        <Label className="text-sm font-medium text-sidebar-foreground">
+                          Base Salary ($) <span className="text-rose-500">*</span>
+                        </Label>
                         <Input 
                           type="number"
                           required 
@@ -429,7 +473,9 @@ export default function Payroll() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-sidebar-foreground">Join Date</Label>
+                        <Label className="text-sm font-medium text-sidebar-foreground">
+                          Join Date <span className="text-rose-500">*</span>
+                        </Label>
                         <Input 
                           type="date"
                           required 
