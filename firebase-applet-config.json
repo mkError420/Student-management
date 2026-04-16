@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0652431859",
+  "projectId": "schoolmanagement-9fe15",
   "appId": "1:79885538237:web:a56a239611e1fa0b4338d4",
   "apiKey": "AIzaSyAskwFttTv_N-c4-OnBILCPmXsdNWkyTjo",
-  "authDomain": "gen-lang-client-0652431859.firebaseapp.com",
+  "authDomain": "schoolmanagement-9fe15.firebaseapp.com",
   "firestoreDatabaseId": "(default)",
-  "storageBucket": "gen-lang-client-0652431859.firebasestorage.app",
+  "storageBucket": "schoolmanagement-9fe15.firebasestorage.app",
   "messagingSenderId": "79885538237",
   "measurementId": ""
 }
