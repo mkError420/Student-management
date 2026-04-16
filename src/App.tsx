@@ -19,6 +19,7 @@ import Exams from '@/src/pages/Exams';
 import Library from '@/src/pages/Library';
 import Payroll from '@/src/pages/Payroll';
 import Settings from '@/src/pages/Settings';
+import Teachers from '@/src/pages/Teachers';
 import Unauthorized from '@/src/pages/Unauthorized';
 
 export default function App() {
@@ -74,6 +75,12 @@ export default function App() {
           <Route path="/payroll" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <Payroll />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/teachers" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Teachers />
             </ProtectedRoute>
           } />
           

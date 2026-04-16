@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
+  UserCheck,
   CalendarCheck, 
   CreditCard, 
   GraduationCap, 
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin', 'teacher', 'parent', 'student'] },
     { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['admin', 'teacher'] },
     { name: 'Students', href: '/students', icon: Users, roles: ['admin', 'teacher'] },
+    { name: 'Teachers', href: '/teachers', icon: UserCheck, roles: ['admin'] },
     { name: 'Attendance', href: '/attendance', icon: CalendarCheck, roles: ['admin', 'teacher'] },
     { name: 'Fees', href: '/fees', icon: CreditCard, roles: ['admin', 'parent'] },
     { name: 'Exams', href: '/exams', icon: GraduationCap, roles: ['admin', 'teacher', 'student', 'parent'] },
