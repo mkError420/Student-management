@@ -58,50 +58,151 @@ import { cn } from '@/lib/utils';
 // Print styles for receipt
 const printStyles = `
 @media print {
-  body * {
-    visibility: hidden;
+  /* Hide everything except receipt */
+  body > *:not(.receipt-print-container),
+  .receipt-print-container > *:not(.receipt-content) {
+    display: none !important;
   }
-  .receipt-content, .receipt-content * {
-    visibility: visible;
+  
+  /* Show only receipt content */
+  .receipt-print-container,
+  .receipt-print-container .receipt-content,
+  .receipt-print-container .receipt-content * {
+    display: block !important;
+    visibility: visible !important;
   }
+  
+  /* Receipt container styling */
+  .receipt-print-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: white !important;
+    z-index: 9999 !important;
+  }
+  
   .receipt-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 20px;
+    max-width: 600px !important;
+    margin: 40px auto !important;
+    padding: 30px !important;
     background: white !important;
     color: black !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
   }
+  
+  /* Text colors for print */
   .receipt-content * {
     color: black !important;
     background: white !important;
-    border-color: black !important;
+    border-color: #ccc !important;
   }
+  
   .receipt-content .text-white {
     color: black !important;
+    font-weight: bold !important;
   }
+  
   .receipt-content .text-sidebar-foreground {
     color: #666 !important;
   }
+  
   .receipt-content .text-primary {
     color: #000 !important;
+    font-weight: bold !important;
   }
+  
   .receipt-content .text-emerald-500 {
     color: #059669 !important;
+    font-weight: bold !important;
   }
+  
   .receipt-content .text-amber-500 {
     color: #d97706 !important;
+    font-weight: bold !important;
   }
+  
   .receipt-content .bg-sidebar-accent {
     background: #f5f5f5 !important;
+    padding: 15px !important;
+    border-radius: 6px !important;
   }
+  
   .receipt-content .border-border {
     border-color: #ccc !important;
   }
+  
+  /* Layout improvements */
+  .receipt-content .flex {
+    display: flex !important;
+  }
+  
+  .receipt-content .grid {
+    display: grid !important;
+  }
+  
+  .receipt-content .space-y-6 > * + * {
+    margin-top: 1.5rem !important;
+  }
+  
+  .receipt-content .space-y-3 > * + * {
+    margin-top: 0.75rem !important;
+  }
+  
+  .receipt-content .space-y-1 > * + * {
+    margin-top: 0.25rem !important;
+  }
+  
+  .receipt-content .text-right {
+    text-align: right !important;
+  }
+  
+  .receipt-content .font-bold {
+    font-weight: bold !important;
+  }
+  
+  .receipt-content .text-lg {
+    font-size: 1.125rem !important;
+  }
+  
+  .receipt-content .text-xl {
+    font-size: 1.25rem !important;
+  }
+  
+  .receipt-content .text-sm {
+    font-size: 0.875rem !important;
+  }
+  
+  .receipt-content .text-xs {
+    font-size: 0.75rem !important;
+  }
+  
+  .receipt-content .uppercase {
+    text-transform: uppercase !important;
+  }
+  
+  .receipt-content .tracking-wider {
+    letter-spacing: 0.05em !important;
+  }
+  
+  /* Page setup */
   @page {
-    margin: 20mm;
-    size: A4;
+    margin: 15mm;
+    size: A4 portrait;
+  }
+  
+  /* Ensure proper print formatting */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  
+  html {
+    background: white !important;
   }
 }
 `;
@@ -274,6 +375,74 @@ export default function Fees() {
     link.click();
     document.body.removeChild(link);
     toast.success('Fee records exported successfully');
+  };
+
+  const handlePrintReceipt = () => {
+    if (!selectedFee) return;
+    
+    // Create print container
+    const printContainer = document.createElement('div');
+    printContainer.className = 'receipt-print-container';
+    
+    // Create receipt content
+    const receiptContent = document.createElement('div');
+    receiptContent.className = 'receipt-content space-y-6 py-4';
+    
+    // Build receipt HTML
+    receiptContent.innerHTML = `
+      <div class="flex justify-between items-start border-b border-border pb-4">
+        <div>
+          <h4 class="text-lg font-bold text-white">School Management System</h4>
+          <p class="text-xs text-sidebar-foreground">123 Education Lane, Learning City</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider">Receipt No.</p>
+          <p class="text-sm font-bold text-white">#${selectedFee.id.slice(-8).toUpperCase()}</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-6">
+        <div class="space-y-1">
+          <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider">Student Name</p>
+          <p class="text-sm font-semibold text-white">${selectedFee.studentName}</p>
+        </div>
+        <div class="space-y-1 text-right">
+          <p class="text-xs font-medium text-sidebar-foreground uppercase tracking-wider">Payment Date</p>
+          <p class="text-sm font-semibold text-white">${format(new Date(selectedFee.date), 'MMMM dd, yyyy')}</p>
+        </div>
+      </div>
+      
+      <div class="bg-sidebar-accent/20 rounded-lg p-4 space-y-3">
+        <div class="flex justify-between text-sm">
+          <span class="text-sidebar-foreground">Fee Description</span>
+          <span class="text-white font-medium capitalize">${selectedFee.type} Fee</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-sidebar-foreground">Status</span>
+          <span class="font-bold uppercase text-[10px] ${selectedFee.status === 'paid' ? 'text-emerald-500' : 'text-amber-500'}">${selectedFee.status}</span>
+        </div>
+        <div class="pt-3 border-t border-border flex justify-between items-center">
+          <span class="text-base font-bold text-white">Total Amount</span>
+          <span class="text-xl font-bold text-primary">৳${selectedFee.amount.toFixed(2)}</span>
+        </div>
+      </div>
+      
+      <div class="text-center space-y-2">
+        <p class="text-[10px] text-sidebar-foreground italic">
+          This is a computer-generated receipt and does not require a physical signature.
+        </p>
+      </div>
+    `;
+    
+    printContainer.appendChild(receiptContent);
+    document.body.appendChild(printContainer);
+    
+    // Print and cleanup
+    window.print();
+    
+    setTimeout(() => {
+      document.body.removeChild(printContainer);
+    }, 100);
   };
 
   const filteredFees = fees.filter(fee => {
@@ -649,7 +818,7 @@ export default function Fees() {
             )}
 
             <DialogFooter className="flex sm:justify-between gap-2">
-              <Button variant="outline" onClick={() => window.print()} className="border-border text-sidebar-foreground">
+              <Button variant="outline" onClick={handlePrintReceipt} className="border-border text-sidebar-foreground">
                 Print Receipt
               </Button>
               <Button onClick={() => setIsReceiptDialogOpen(false)}>Close</Button>
