@@ -112,11 +112,102 @@ export default function Exams() {
   useEffect(() => {
     if (isReportDialogOpen) {
       document.body.classList.add('report-printing');
+      // Inject print styles
+      const style = document.createElement('style');
+      style.textContent = `
+        @media print {
+          @page {
+            size: landscape;
+            margin: 0.5in;
+          }
+          
+          body * {
+            visibility: hidden;
+          }
+          
+          #printable-report,
+          #printable-report * {
+            visibility: visible;
+          }
+          
+          #printable-report {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          
+          #printable-report table {
+            width: 100% !important;
+            font-size: 8pt !important;
+            table-layout: fixed !important;
+          }
+          
+          #printable-report th,
+          #printable-report td {
+            padding: 2px 4px !important;
+            border: 1px solid #000 !important;
+            vertical-align: middle !important;
+            text-align: center !important;
+            word-wrap: break-word !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          
+          #printable-report th:first-child,
+          #printable-report td:first-child {
+            text-align: left !important;
+            width: 25% !important;
+            min-width: 120px !important;
+          }
+          
+          #printable-report th:nth-child(2),
+          #printable-report td:nth-child(2) {
+            width: 8% !important;
+            min-width: 40px !important;
+          }
+          
+          #printable-report th:not(:first-child):not(:nth-child(2)):not(:last-child):not(:nth-last-child(2)),
+          #printable-report td:not(:first-child):not(:nth-child(2)):not(:last-child):not(:nth-last-child(2)) {
+            width: calc((67% - 80px) / var(--exam-count, 4)) !important;
+            min-width: 60px !important;
+          }
+          
+          #printable-report th:last-child,
+          #printable-report td:last-child {
+            width: 8% !important;
+            min-width: 50px !important;
+            text-align: right !important;
+          }
+          
+          #printable-report th:nth-last-child(2),
+          #printable-report td:nth-last-child(2) {
+            width: 8% !important;
+            min-width: 50px !important;
+          }
+          
+          #printable-report h2 {
+            font-size: 16pt !important;
+            margin-bottom: 10px !important;
+          }
+          
+          #printable-report p {
+            font-size: 10pt !important;
+            margin-bottom: 20px !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.body.classList.remove('report-printing');
+        document.head.removeChild(style);
+      };
     } else {
       document.body.classList.remove('report-printing');
     }
-    return () => document.body.classList.remove('report-printing');
-  }, [isReportDialogOpen]);
+  }, [isReportDialogOpen, reportExams.length]);
   
   const [viewMode, setViewMode] = useState<'list' | 'grading'>('list');
   const [gradingExam, setGradingExam] = useState<Exam | null>(null);
@@ -530,8 +621,8 @@ export default function Exams() {
                         </p>
                       </div>
 
-                      <div className="rounded-md border border-border overflow-x-auto print:border-none print:overflow-visible">
-                        <Table className="print:w-full print:text-black">
+                      <div className="rounded-md border border-border overflow-x-auto print:border-none print:overflow-visible" style={{'--exam-count': reportExams.length} as React.CSSProperties}>
+                        <Table className="print:w-full print:text-black print:table-fixed">
                           <TableHeader className="bg-sidebar-accent/30 print:bg-gray-100">
                             <TableRow className="border-border hover:bg-transparent print:border-gray-300">
                               <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase min-w-[120px] print:text-black print:border print:border-gray-300">Student</TableHead>
