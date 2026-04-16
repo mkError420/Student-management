@@ -1,0 +1,181 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Base user entity for authentication and role-based access.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "teacher", "parent", "student"] },
+        "photoURL": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Detailed student profile.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "rollNumber": { "type": "string" },
+        "classId": { "type": "string" },
+        "parentId": { "type": "string" },
+        "dateOfBirth": { "type": "string", "format": "date" },
+        "address": { "type": "string" },
+        "admissionDate": { "type": "string", "format": "date" },
+        "guardianPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "graduated"] }
+      },
+      "required": ["name", "rollNumber", "classId", "guardianPhone"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance records.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "classId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["present", "absent", "late"] },
+        "markedBy": { "type": "string" }
+      },
+      "required": ["studentId", "date", "status"]
+    },
+    "Fee": {
+      "title": "Fee",
+      "description": "Fee collection records.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["tuition", "exam", "library", "other"] },
+        "status": { "type": "string", "enum": ["paid", "pending", "overdue"] },
+        "date": { "type": "string", "format": "date" },
+        "transactionId": { "type": "string" }
+      },
+      "required": ["studentId", "amount", "status", "date"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Exam schedules and details.",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "classId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "type": { "type": "string", "enum": ["midterm", "final", "quiz", "monthly"] },
+        "status": { "type": "string", "enum": ["scheduled", "completed", "ongoing"] },
+        "totalMarks": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "classId", "date", "time", "type", "status", "totalMarks"]
+    },
+    "Result": {
+      "title": "Result",
+      "description": "Student exam results.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "examId": { "type": "string" },
+        "marksObtained": { "type": "number" },
+        "grade": { "type": "string" },
+        "remarks": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "examId", "marksObtained", "grade"]
+    },
+    "LibraryBook": {
+      "title": "LibraryBook",
+      "description": "Books in the school library.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "isbn": { "type": "string" },
+        "category": { "type": "string" },
+        "total": { "type": "number" },
+        "available": { "type": "number" }
+      },
+      "required": ["title", "author", "total"]
+    },
+    "LibraryIssue": {
+      "title": "LibraryIssue",
+      "description": "Records of books issued to students.",
+      "type": "object",
+      "properties": {
+        "bookId": { "type": "string" },
+        "bookTitle": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "issueDate": { "type": "string", "format": "date-time" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "returnDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["issued", "returned"] }
+      },
+      "required": ["bookId", "studentId", "issueDate", "dueDate", "status"]
+    },
+    "Payroll": {
+      "title": "Payroll",
+      "description": "Staff salary records.",
+      "type": "object",
+      "properties": {
+        "staffId": { "type": "string" },
+        "month": { "type": "string" },
+        "year": { "type": "number" },
+        "baseSalary": { "type": "number" },
+        "allowances": { "type": "number" },
+        "deductions": { "type": "number" },
+        "netSalary": { "type": "number" },
+        "status": { "type": "string", "enum": ["paid", "pending"] }
+      },
+      "required": ["staffId", "month", "year", "netSalary"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System alerts and communication.",
+      "type": "object",
+      "properties": {
+        "recipientId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["alert", "info", "update"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recipientId", "title", "message"]
+    },
+    "Class": {
+      "title": "Class",
+      "description": "School class and section definitions.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "section": { "type": "string" },
+        "teacher": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "section", "teacher"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/students/{studentId}": { "schema": "Student", "description": "Student records" },
+    "/classes/{classId}": { "schema": "Class", "description": "Class definitions" },
+    "/attendance/{attendanceId}": { "schema": "Attendance", "description": "Daily attendance" },
+    "/fees/{feeId}": { "schema": "Fee", "description": "Fee payments" },
+    "/exams/{examId}": { "schema": "Exam", "description": "Exam schedules" },
+    "/results/{resultId}": { "schema": "Result", "description": "Exam results" },
+    "/library_books/{bookId}": { "schema": "LibraryBook", "description": "Library inventory" },
+    "/library_issues/{issueId}": { "schema": "LibraryIssue", "description": "Book issue records" },
+    "/payroll/{payrollId}": { "schema": "Payroll", "description": "Staff payroll" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "User notifications" }
+  }
+}
