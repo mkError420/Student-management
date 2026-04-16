@@ -139,52 +139,56 @@ export default function Exams() {
           
           #printable-report table {
             width: 100% !important;
-            font-size: 8pt !important;
-            table-layout: fixed !important;
+            font-size: 7pt !important;
+            table-layout: auto !important;
           }
           
           #printable-report th,
           #printable-report td {
-            padding: 2px 4px !important;
+            padding: 3px 5px !important;
             border: 1px solid #000 !important;
             vertical-align: middle !important;
             text-align: center !important;
+            white-space: normal !important;
             word-wrap: break-word !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
+            line-height: 1.2 !important;
           }
           
           #printable-report th:first-child,
           #printable-report td:first-child {
             text-align: left !important;
-            width: 25% !important;
-            min-width: 120px !important;
+            width: 20% !important;
+            min-width: 100px !important;
+            font-weight: bold !important;
           }
           
           #printable-report th:nth-child(2),
           #printable-report td:nth-child(2) {
             width: 8% !important;
             min-width: 40px !important;
+            font-weight: bold !important;
           }
           
           #printable-report th:not(:first-child):not(:nth-child(2)):not(:last-child):not(:nth-last-child(2)),
           #printable-report td:not(:first-child):not(:nth-child(2)):not(:last-child):not(:nth-last-child(2)) {
-            width: calc((67% - 80px) / var(--exam-count, 4)) !important;
-            min-width: 60px !important;
+            width: 10% !important;
+            min-width: 70px !important;
+            font-weight: bold !important;
           }
           
           #printable-report th:last-child,
           #printable-report td:last-child {
-            width: 8% !important;
-            min-width: 50px !important;
+            width: 7% !important;
+            min-width: 40px !important;
             text-align: right !important;
+            font-weight: bold !important;
           }
           
           #printable-report th:nth-last-child(2),
           #printable-report td:nth-last-child(2) {
-            width: 8% !important;
-            min-width: 50px !important;
+            width: 7% !important;
+            min-width: 40px !important;
+            font-weight: bold !important;
           }
           
           #printable-report h2 {
@@ -625,15 +629,15 @@ export default function Exams() {
                         <Table className="print:w-full print:text-black print:table-fixed">
                           <TableHeader className="bg-sidebar-accent/30 print:bg-gray-100">
                             <TableRow className="border-border hover:bg-transparent print:border-gray-300">
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase min-w-[120px] print:text-black print:border print:border-gray-300">Student</TableHead>
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300">Roll</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase min-w-[120px] print:text-black print:border print:border-gray-300 print:font-bold">Student Name</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">Roll No</TableHead>
                               {reportExams.map(exam => (
-                                <TableHead key={exam.id} className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300">
-                                  {exam.subject}
+                                <TableHead key={exam.id} className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">
+                                  <div className="print:whitespace-normal print:break-words">{exam.subject}</div>
                                 </TableHead>
                               ))}
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300">Total</TableHead>
-                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-right print:text-black print:border print:border-gray-300">Avg</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">Total</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-right print:text-black print:border print:border-gray-300 print:font-bold">Average</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -644,19 +648,19 @@ export default function Exams() {
                                 let total = 0;
                                 return (
                                   <TableRow key={student.id} className="border-border hover:bg-transparent print:border-gray-200">
-                                    <TableCell className="text-sm text-white font-medium print:text-black print:border print:border-gray-200">{student.name}</TableCell>
-                                    <TableCell className="text-sm text-sidebar-foreground text-center print:text-black print:border print:border-gray-200">{student.rollNumber}</TableCell>
+                                    <TableCell className="text-sm text-white font-medium print:text-black print:border print:border-gray-200 print:font-normal">{student.name}</TableCell>
+                                    <TableCell className="text-sm text-sidebar-foreground text-center print:text-black print:border print:border-gray-200 print:font-normal">{student.rollNumber}</TableCell>
                                     {reportExams.map(exam => {
                                       const result = studentResults.find(r => r.examId === exam.id);
                                       if (result) total += result.marksObtained;
                                       return (
-                                        <TableCell key={exam.id} className="text-sm text-sidebar-foreground text-center print:text-black print:border print:border-gray-200">
+                                        <TableCell key={exam.id} className="text-sm text-sidebar-foreground text-center print:text-black print:border print:border-gray-200 print:font-normal">
                                           {result ? result.marksObtained : '-'}
                                         </TableCell>
                                       );
                                     })}
-                                    <TableCell className="text-sm text-white font-bold text-center print:text-black print:border print:border-gray-200">{total}</TableCell>
-                                    <TableCell className="text-sm text-primary font-bold text-right print:text-black print:border print:border-gray-200">
+                                    <TableCell className="text-sm text-white font-bold text-center print:text-black print:border print:border-gray-200 print:font-bold">{total}</TableCell>
+                                    <TableCell className="text-sm text-primary font-bold text-right print:text-black print:border print:border-gray-200 print:font-bold">
                                       {reportExams.length > 0 ? (total / reportExams.length).toFixed(1) : '0.0'}
                                     </TableCell>
                                   </TableRow>
