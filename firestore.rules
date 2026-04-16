@@ -29,6 +29,9 @@ service cloud.firestore {
     // Collection: library_issues
     // Fields: bookId, bookTitle, studentId, studentName, studentClass, issueDate, dueDate, returnDate, status
     //
+    // Collection: staff
+    // Fields: name, email, role, department, baseSalary, joinDate, status
+    //
     // Collection: payroll
     // Fields: staffId, month, year, netSalary, status
     //
@@ -130,6 +133,11 @@ service cloud.firestore {
 
     match /library_issues/{id} {
       allow read: if isAdmin() || isTeacher() || isOwner(resource.data.studentId);
+      allow write: if isAdmin();
+    }
+
+    match /staff/{id} {
+      allow read: if isAdmin() || isTeacher();
       allow write: if isAdmin();
     }
 

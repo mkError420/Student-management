@@ -64,7 +64,7 @@ import {
   getDocs,
   where 
 } from 'firebase/firestore';
-import { db } from '@/src/lib/firebase';
+import { db, auth } from '@/src/lib/firebase';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -170,8 +170,33 @@ export default function Payroll() {
     return { grossSalary, tax, netSalary };
   };
 
+  const testFirebaseConnection = async () => {
+    try {
+      console.log('Testing Firebase connection...');
+      console.log('Auth state:', auth.currentUser);
+      console.log('Auth token:', await auth.currentUser?.getIdToken());
+      
+      // Test reading staff collection
+      const staffQuery = query(collection(db, 'staff'));
+      const querySnapshot = await getDocs(staffQuery);
+      console.log('Staff collection accessible, documents found:', querySnapshot.size);
+      
+      return true;
+    } catch (error) {
+      console.error('Firebase connection test failed:', error);
+      return false;
+    }
+  };
+
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Test connection first
+    const isConnected = await testFirebaseConnection();
+    if (!isConnected) {
+      toast.error('Firebase connection test failed. Please check your connection.');
+      return;
+    }
     
     // Validation
     if (!newStaff.name.trim()) {
@@ -200,6 +225,16 @@ export default function Payroll() {
     }
     
     try {
+      console.log('Attempting to add staff with data:', {
+        name: newStaff.name.trim(),
+        email: newStaff.email.trim(),
+        role: newStaff.role,
+        department: newStaff.department,
+        baseSalary: Number(newStaff.baseSalary),
+        joinDate: newStaff.joinDate,
+        status: newStaff.status
+      });
+      
       const staffData = {
         name: newStaff.name.trim(),
         email: newStaff.email.trim(),
@@ -211,7 +246,12 @@ export default function Payroll() {
         createdAt: new Date().toISOString()
       };
       
-      await addDoc(collection(db, 'staff'), staffData);
+      console.log('Firebase db object:', db);
+      console.log('Collection reference:', collection(db, 'staff'));
+      
+      const docRef = await addDoc(collection(db, 'staff'), staffData);
+      console.log('Staff added successfully with ID:', docRef.id);
+      
       setIsStaffDialogOpen(false);
       setNewStaff({
         name: '',
@@ -224,8 +264,21 @@ export default function Payroll() {
       });
       toast.success('Staff member added successfully');
     } catch (error) {
-      console.error('Error adding staff:', error);
-      toast.error('Failed to add staff member. Please try again.');
+      console.error('Detailed error adding staff:', error);
+      console.error('Error code:', (error as any).code);
+      console.error('Error message:', (error as any).message);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      
+      // Provide more specific error messages
+      if ((error as any).code === 'permission-denied') {
+        toast.error('Permission denied. Firebase rules may not be deployed yet. Please try deploying the rules first.');
+      } else if ((error as any).code === 'unavailable') {
+        toast.error('Firebase is currently unavailable. Please try again.');
+      } else if ((error as any).code === 'unauthenticated') {
+        toast.error('You are not authenticated. Please log in again.');
+      } else {
+        toast.error(`Failed to add staff member: ${(error as any).message || 'Unknown error'}. Check console for details.`);
+      }
     }
   };
 
@@ -378,6 +431,15 @@ export default function Payroll() {
             <Button variant="outline" size="sm" onClick={downloadCSV} className="border-border text-sidebar-foreground hover:bg-sidebar-accent">
               <Download className="w-4 h-4 mr-2" />
               Export CSV
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={testFirebaseConnection}
+              className="border-border text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Test Connection
             </Button>
             <Dialog open={isStaffDialogOpen} onOpenChange={setIsStaffDialogOpen}>
               <DialogTrigger asChild>
