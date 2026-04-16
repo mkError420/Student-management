@@ -440,6 +440,53 @@ export default function Exams() {
     }
   };
 
+  const downloadCSV = () => {
+    if (reportResults.length === 0 || reportExams.length === 0) return;
+    
+    const className = classes.find(c => c.id === reportClassId)?.name || '';
+    const examType = reportExamType.replace('_', ' ').toUpperCase();
+    
+    // Create CSV headers
+    const headers = ['Student Name', 'Roll No', ...reportExams.map(exam => exam.subject), 'Total', 'Average'];
+    
+    // Create CSV data
+    const csvData = students
+      .filter(s => s.classId === reportClassId)
+      .map(student => {
+        const studentResults = reportResults.filter(r => r.studentId === student.id);
+        let total = 0;
+        const marks = reportExams.map(exam => {
+          const result = studentResults.find(r => r.examId === exam.id);
+          if (result) total += result.marksObtained;
+          return result ? result.marksObtained : '-';
+        });
+        const average = reportExams.length > 0 ? (total / reportExams.length).toFixed(1) : '0.0';
+        
+        return [student.name, student.rollNumber, ...marks, total, average];
+      });
+    
+    // Create CSV content
+    const csvContent = [
+      `Exam Performance Report - ${examType} - ${className}`,
+      '',
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Exam_Report_${examType}_${className}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Report downloaded successfully');
+  };
+
   const filteredExams = exams.filter(exam => 
     exam.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
     classes.find(c => c.id === exam.classId)?.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -673,8 +720,8 @@ export default function Exams() {
                   )}
                 </div>
                 <DialogFooter className="flex sm:justify-between gap-2 print:hidden">
-                  <Button variant="outline" onClick={() => window.print()} disabled={reportResults.length === 0} className="border-border text-sidebar-foreground">
-                    Print Report
+                  <Button variant="outline" onClick={downloadCSV} disabled={reportResults.length === 0} className="border-border text-sidebar-foreground">
+                    Download CSV
                   </Button>
                   <Button onClick={() => {
                     setIsReportDialogOpen(false);
