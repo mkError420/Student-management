@@ -1023,37 +1023,66 @@ export default function Exams() {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {classExams.map((exam) => (
-                        <Card key={exam.id} className="bg-card border-border hover:border-primary/50 transition-colors cursor-pointer group" onClick={() => startGrading(exam)}>
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div className="p-2 bg-primary/10 rounded-lg">
-                                <GraduationCap className="w-5 h-5 text-primary" />
-                              </div>
-                              <Badge variant={exam.status === 'completed' ? 'default' : 'secondary'} className="capitalize">
-                                {exam.status}
-                              </Badge>
-                            </div>
-                            <CardTitle className="text-white mt-4">{exam.subject}</CardTitle>
-                            <CardDescription className="text-sidebar-foreground">
-                              {exam.type} • Total Marks: {exam.totalMarks}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between text-sm mt-4">
-                              <div className="flex items-center text-sidebar-foreground">
-                                <Calendar className="w-4 h-4 mr-2" />
-                                {format(new Date(exam.date), 'MMM dd')}
-                              </div>
-                              <div className="text-primary font-medium flex items-center group-hover:translate-x-1 transition-transform">
-                                Manage Results
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-sidebar-accent/30">
+                          <TableRow className="border-border hover:bg-transparent">
+                            <TableHead className="font-semibold text-sidebar-foreground">Subject</TableHead>
+                            <TableHead className="font-semibold text-sidebar-foreground">Exam Type</TableHead>
+                            <TableHead className="font-semibold text-sidebar-foreground">Total Marks</TableHead>
+                            <TableHead className="font-semibold text-sidebar-foreground">Date</TableHead>
+                            <TableHead className="font-semibold text-sidebar-foreground">Status</TableHead>
+                            <TableHead className="text-right font-semibold text-sidebar-foreground">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {classExams.map((exam) => (
+                            <TableRow key={exam.id} className="border-border hover:bg-sidebar-accent/20 transition-colors">
+                              <TableCell>
+                                <div className="flex items-center space-x-3">
+                                  <div className="p-2 bg-primary/10 rounded-lg">
+                                    <GraduationCap className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <span className="font-semibold text-white">{exam.subject}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="capitalize bg-sidebar-accent/50 text-sidebar-foreground border-none">
+                                  {exam.type.replace('_', ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-white font-medium">{exam.totalMarks}</TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <p className="font-medium text-white">{format(new Date(exam.date), 'MMM dd, yyyy')}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className={cn(
+                                  "inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
+                                  exam.status === 'ongoing' ? "bg-amber-500/10 text-amber-500" :
+                                  "bg-emerald-500/10 text-emerald-500"
+                                )}>
+                                  {exam.status === 'ongoing' && <Clock className="w-3 h-3 mr-1" />}
+                                  {exam.status === 'completed' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                                  {exam.status}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => startGrading(exam)}
+                                  className="text-primary hover:bg-primary/10 h-8 px-3"
+                                >
+                                  Manage Results
+                                  <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
                 );
