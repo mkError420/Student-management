@@ -34,7 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       if (!firebaseUser) {
-        setProfile(null);
+        // Check for test user in localStorage as fallback
+        const testUser = localStorage.getItem('testUser');
+        if (testUser) {
+          const userProfile = JSON.parse(testUser);
+          setProfile(userProfile);
+        } else {
+          setProfile(null);
+        }
         setLoading(false);
       }
     });

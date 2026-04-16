@@ -55,6 +55,57 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+// Print styles for receipt
+const printStyles = `
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-content, .receipt-content * {
+    visibility: visible;
+  }
+  .receipt-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+    background: white !important;
+    color: black !important;
+  }
+  .receipt-content * {
+    color: black !important;
+    background: white !important;
+    border-color: black !important;
+  }
+  .receipt-content .text-white {
+    color: black !important;
+  }
+  .receipt-content .text-sidebar-foreground {
+    color: #666 !important;
+  }
+  .receipt-content .text-primary {
+    color: #000 !important;
+  }
+  .receipt-content .text-emerald-500 {
+    color: #059669 !important;
+  }
+  .receipt-content .text-amber-500 {
+    color: #d97706 !important;
+  }
+  .receipt-content .bg-sidebar-accent {
+    background: #f5f5f5 !important;
+  }
+  .receipt-content .border-border {
+    border-color: #ccc !important;
+  }
+  @page {
+    margin: 20mm;
+    size: A4;
+  }
+}
+`;
+
 interface FeeRecord {
   id: string;
   studentName: string;
@@ -79,6 +130,17 @@ interface Class {
 
 export default function Fees() {
   const [fees, setFees] = useState<FeeRecord[]>([]);
+
+  // Inject print styles when component mounts
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = printStyles;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -537,7 +599,7 @@ export default function Fees() {
             </DialogHeader>
             
             {selectedFee && (
-              <div className="space-y-6 py-4">
+              <div className="receipt-content space-y-6 py-4">
                 <div className="flex justify-between items-start border-b border-border pb-4">
                   <div>
                     <h4 className="text-lg font-bold text-white">School Management System</h4>
