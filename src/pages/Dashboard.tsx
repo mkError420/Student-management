@@ -46,8 +46,19 @@ export default function Dashboard() {
   const { profile } = useAuth();
   const [upcomingExams, setUpcomingExams] = useState<any[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
 
   useEffect(() => {
+    // Fetch students data
+    const studentsQuery = query(collection(db, 'students'));
+    const unsubscribeStudents = onSnapshot(studentsQuery, (snapshot) => {
+      const studentData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setStudents(studentData);
+    });
+
     const q = query(
       collection(db, 'exams'), 
       where('status', '==', 'scheduled'),
@@ -78,10 +89,23 @@ export default function Dashboard() {
     });
 
     return () => {
+      unsubscribeStudents();
       unsubscribe();
       unsubscribeTransactions();
     };
   }, []);
+
+  // Helper function to get student details
+  const getStudentDetails = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    return student || { name: 'Unknown', rollNumber: 'N/A', classId: null };
+  };
+
+  // Helper function to get class name
+  const getClassName = (classId: string) => {
+    // This would ideally fetch from classes collection, but for now we'll return the ID
+    return classId || 'N/A';
+  };
 
   const StatCard = ({ title, value, trend, color, trendDown }: any) => (
     <Card className="bg-card border-border rounded-xl p-5 flex flex-col shadow-none">
@@ -188,11 +212,14 @@ export default function Dashboard() {
               <span className="text-sm font-semibold text-white">Recent Transactions</span>
             </div>
             <div className="space-y-0">
-              {recentTransactions.length > 0 ? recentTransactions.map((tx, i) => (
+              {recentTransactions.length > 0 ? recentTransactions.map((tx, i) => {
+                const student = getStudentDetails(tx.studentId);
+                return (
                 <div key={i} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                  <div>
-                    <h4 className="text-[13px] font-medium text-white">{tx.studentName}</h4>
-                    <p className="text-[11px] text-sidebar-foreground capitalize">{tx.type} Fee • ৳{tx.amount.toFixed(2)}</p>
+                  <div className="flex-1">
+                    <h4 className="text-[13px] font-medium text-white">{tx.studentName || student.name}</h4>
+                    <p className="text-[11px] text-sidebar-foreground capitalize">{tx.type} Fee ৳{tx.amount.toFixed(2)}</p>
+                    <p className="text-[10px] text-sidebar-foreground">Class: {getClassName(student.classId)}  Roll No: {student.rollNumber}</p>
                   </div>
                   <div className={cn(
                     "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
@@ -203,7 +230,8 @@ export default function Dashboard() {
                     {tx.status}
                   </div>
                 </div>
-              )) : (
+                );
+              }) : (
                 <div className="py-8 text-center text-sidebar-foreground text-sm">
                   No recent transactions.
                 </div>
