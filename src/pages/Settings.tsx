@@ -57,7 +57,7 @@ export default function Settings() {
   const [backupProgress, setBackupProgress] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [settings, setSettings] = useState({
-    profile: {
+    profile: { 
       displayName: profile?.displayName || '',
       phone: '',
       bio: '',

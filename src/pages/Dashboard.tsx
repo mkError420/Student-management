@@ -264,28 +264,65 @@ export default function Dashboard() {
               <span className="text-sm font-semibold text-white">Student Admission Trends</span>
               <span className="text-[11px] text-sidebar-foreground">Last 6 Months</span>
             </div>
-            <div className="flex-1 flex items-end gap-2 pt-2 min-h-[200px]">
-              {monthlyData.map((item, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                  <div 
-                    className={cn(
-                      "w-full rounded-t-md transition-all duration-300",
-                      i === monthlyData.length - 1 ? "bg-primary" : "bg-[#23262D] group-hover:bg-[#2D3139]"
-                    )}
-                    style={{ height: `${(item.students / 600) * 100}%` }}
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    axisLine={{ stroke: '#374151' }}
                   />
-                  <span className="text-[9px] text-slate-600 font-bold uppercase">{item.name}</span>
-                </div>
-              ))}
+                  <YAxis 
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    axisLine={{ stroke: '#374151' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1F2937', 
+                      border: '1px solid #374151',
+                      borderRadius: '8px',
+                      color: '#F3F4F6'
+                    }}
+                    labelStyle={{ color: '#F3F4F6', fontWeight: 'bold' }}
+                  />
+                  <Bar 
+                    dataKey="students" 
+                    fill="#3B82F6"
+                    radius={[8, 8, 0, 0]}
+                    animationDuration={1000}
+                  />
+                  <Bar 
+                    dataKey="revenue" 
+                    fill="#10B981"
+                    radius={[8, 8, 0, 0]}
+                    animationDuration={1200}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div className="mt-6 flex gap-8">
-              <div>
-                <p className="text-[11px] text-sidebar-foreground">Total Students</p>
-                <p className="text-2xl font-bold text-white">{stats.totalStudents.toLocaleString()}</p>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="bg-[#1F2937] rounded-lg p-4 border border-[#374151]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] text-[#9CA3AF]">Total Students</p>
+                    <p className="text-xl font-bold text-white">{stats.totalStudents.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-blue-500/20 p-2 rounded-lg">
+                    <Users className="w-5 h-5 text-blue-400" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] text-sidebar-foreground">Growth Rate</p>
-                <p className="text-2xl font-bold text-emerald-500">+12.4%</p>
+              <div className="bg-[#1F2937] rounded-lg p-4 border border-[#374151]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] text-[#9CA3AF]">Growth Rate</p>
+                    <p className="text-xl font-bold text-emerald-400">+12.4%</p>
+                  </div>
+                  <div className="bg-emerald-500/20 p-2 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
