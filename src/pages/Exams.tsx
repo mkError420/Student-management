@@ -368,6 +368,25 @@ export default function Exams() {
     }
   };
 
+  const calculateCGPA = (grades: string[]) => {
+    const gradePoints: { [key: string]: number } = {
+      'A+': 5.0,
+      'A': 4.5,
+      'A-': 4.0,
+      'B': 3.5,
+      'C': 3.0,
+      'D': 2.0,
+      'F': 0.0
+    };
+
+    if (grades.length === 0) return 0.0;
+    
+    const totalPoints = grades.reduce((sum, grade) => sum + (gradePoints[grade] || 0), 0);
+    const cgpa = totalPoints / grades.length;
+    
+    return Math.round(cgpa * 100) / 100; // Round to 2 decimal places
+  };
+
   const saveResults = async () => {
     if (!gradingExam) return;
     try {
@@ -447,7 +466,7 @@ export default function Exams() {
     const examType = reportExamType.replace('_', ' ').toUpperCase();
     
     // Create CSV headers
-    const headers = ['Student Name', 'Roll No', ...reportExams.map(exam => exam.subject), 'Total', 'Average'];
+    const headers = ['Student Name', 'Roll No', ...reportExams.map(exam => exam.subject), 'Total', 'Average', 'CGPA (5.00)'];
     
     // Create CSV data
     const csvData = students
@@ -462,7 +481,15 @@ export default function Exams() {
         });
         const average = reportExams.length > 0 ? (total / reportExams.length).toFixed(1) : '0.0';
         
-        return [student.name, student.rollNumber, ...marks, total, average];
+        // Calculate CGPA
+        const studentGrades = reportExams.map(exam => {
+          const result = studentResults.find(r => r.examId === exam.id);
+          if (!result) return 'F';
+          return calculateGrade(result.marksObtained, exam.totalMarks, exam.type);
+        });
+        const cgpa = calculateCGPA(studentGrades).toFixed(2);
+        
+        return [student.name, student.rollNumber, ...marks, total, average, cgpa];
       });
     
     // Create CSV content
@@ -685,6 +712,7 @@ export default function Exams() {
                               ))}
                               <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">Total</TableHead>
                               <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-right print:text-black print:border print:border-gray-300 print:font-bold">Average</TableHead>
+                              <TableHead className="text-[11px] font-bold text-sidebar-foreground uppercase text-center print:text-black print:border print:border-gray-300 print:font-bold">CGPA (5.00)</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -709,6 +737,16 @@ export default function Exams() {
                                     <TableCell className="text-sm text-white font-bold text-center print:text-black print:border print:border-gray-200 print:font-bold">{total}</TableCell>
                                     <TableCell className="text-sm text-primary font-bold text-right print:text-black print:border print:border-gray-200 print:font-bold">
                                       {reportExams.length > 0 ? (total / reportExams.length).toFixed(1) : '0.0'}
+                                    </TableCell>
+                                    <TableCell className="text-sm text-emerald-500 font-bold text-center print:text-black print:border print:border-gray-200 print:font-bold">
+                                      {(() => {
+                                        const studentGrades = reportExams.map(exam => {
+                                          const result = studentResults.find(r => r.examId === exam.id);
+                                          if (!result) return 'F';
+                                          return calculateGrade(result.marksObtained, exam.totalMarks, exam.type);
+                                        });
+                                        return calculateCGPA(studentGrades).toFixed(2);
+                                      })()}
                                     </TableCell>
                                   </TableRow>
                                 );
