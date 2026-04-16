@@ -337,7 +337,10 @@ export default function Fees() {
     if (!selectedFee) return;
     try {
       const feeRef = doc(db, 'fees', selectedFee.id);
+      const cls = classes.find(c => c.id === selectedFee.classId);
       await updateDoc(feeRef, {
+        classId: selectedFee.classId,
+        className: cls ? `${cls.name} - ${cls.section}` : 'Unknown Class',
         amount: Number(selectedFee.amount),
         status: selectedFee.status,
         type: selectedFee.type,
@@ -886,7 +889,26 @@ export default function Fees() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-sidebar-foreground">Amount (৳)</label>
+                      <label className="text-sm font-medium text-sidebar-foreground">Class</label>
+                      <Select value={selectedFee.classId || ''} onValueChange={val => setSelectedFee({...selectedFee, classId: val})}>
+                        <SelectTrigger className="w-full bg-background border-border">
+                          <SelectValue>
+                            {selectedFee.classId && classes.find(c => c.id === selectedFee.classId) ? 
+                             `${classes.find(c => c.id === selectedFee.classId)?.name} - ${classes.find(c => c.id === selectedFee.classId)?.section}` : 
+                             'Select Class'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border">
+                          {classes.map((cls) => (
+                            <SelectItem key={cls.id} value={cls.id}>
+                              {cls.name} - {cls.section}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-sidebar-foreground">Amount (Tk)</label>
                       <Input 
                         type="number" 
                         required 
@@ -895,6 +917,8 @@ export default function Fees() {
                         className="bg-background border-border"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-sidebar-foreground">Fee Type</label>
                       <Select value={selectedFee.type || ''} onValueChange={val => setSelectedFee({...selectedFee, type: val})}>
@@ -914,8 +938,6 @@ export default function Fees() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-sidebar-foreground">Payment Date</label>
                       <Input 
@@ -926,6 +948,8 @@ export default function Fees() {
                         className="bg-background border-border"
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-sidebar-foreground">Status</label>
                       <Select value={selectedFee.status || ''} onValueChange={(val: any) => setSelectedFee({...selectedFee, status: val})}>
