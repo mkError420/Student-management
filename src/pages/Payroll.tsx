@@ -174,16 +174,36 @@ export default function Payroll() {
     try {
       console.log('Testing Firebase connection...');
       console.log('Auth state:', auth.currentUser);
-      console.log('Auth token:', await auth.currentUser?.getIdToken());
       
       // Test reading staff collection
       const staffQuery = query(collection(db, 'staff'));
       const querySnapshot = await getDocs(staffQuery);
       console.log('Staff collection accessible, documents found:', querySnapshot.size);
       
+      // Test writing to staff collection with minimal data
+      const testData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'teacher',
+        department: 'academics',
+        baseSalary: 1000,
+        joinDate: '2024-01-01',
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+      
+      const testDoc = await addDoc(collection(db, 'staff'), testData);
+      console.log('Test staff document created with ID:', testDoc.id);
+      
+      // Clean up test document
+      await deleteDoc(doc(db, 'staff', testDoc.id));
+      console.log('Test document cleaned up');
+      
+      toast.success('Firebase connection test successful! Staff collection is working.');
       return true;
     } catch (error) {
       console.error('Firebase connection test failed:', error);
+      toast.error(`Connection test failed: ${(error as any).message}`);
       return false;
     }
   };
