@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [upcomingExams, setUpcomingExams] = useState<any[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
 
   useEffect(() => {
     // Fetch students data
@@ -57,6 +58,16 @@ export default function Dashboard() {
         ...doc.data()
       }));
       setStudents(studentData);
+    });
+
+    // Fetch classes data
+    const classesQuery = query(collection(db, 'classes'));
+    const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
+      const classData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClasses(classData);
     });
 
     const q = query(
@@ -81,19 +92,27 @@ export default function Dashboard() {
     );
 
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
-      const transactions = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const transactions = snapshot.docs.map(doc => {
+        const data = doc.data();
+        const student = students.find(s => s.id === data.studentId);
+        const cls = classes.find(c => c.id === data.classId);
+        return {
+          id: doc.id,
+          ...data,
+          rollNumber: student?.rollNumber || 'N/A',
+          className: cls ? `${cls.name} - ${cls.section}` : 'Unknown Class'
+        };
+      });
       setRecentTransactions(transactions);
     });
 
     return () => {
       unsubscribeStudents();
+      unsubscribeClasses();
       unsubscribe();
       unsubscribeTransactions();
     };
-  }, []);
+  }, [students, classes]);
 
   // Helper function to get student details
   const getStudentDetails = (studentId: string) => {
@@ -212,14 +231,12 @@ export default function Dashboard() {
               <span className="text-sm font-semibold text-white">Recent Transactions</span>
             </div>
             <div className="space-y-0">
-              {recentTransactions.length > 0 ? recentTransactions.map((tx, i) => {
-                const student = getStudentDetails(tx.studentId);
-                return (
+              {recentTransactions.length > 0 ? recentTransactions.map((tx, i) => (
                 <div key={i} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                   <div className="flex-1">
-                    <h4 className="text-[13px] font-medium text-white">{tx.studentName || student.name}</h4>
-                    <p className="text-[11px] text-sidebar-foreground capitalize">{tx.type} Fee ৳{tx.amount.toFixed(2)}</p>
-                    <p className="text-[10px] text-sidebar-foreground">Class: {getClassName(student.classId)}  Roll No: {student.rollNumber}</p>
+                    <h4 className="text-[13px] font-medium text-white">{tx.studentName}</h4>
+                    <p className="text-[11px] text-sidebar-foreground capitalize">{tx.type} Fee ivo{tx.amount.toFixed(2)}</p>
+                    <p className="text-[10px] text-sidebar-foreground">Class: {tx.className}  Roll No: {tx.rollNumber}</p>
                   </div>
                   <div className={cn(
                     "px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider",
@@ -230,8 +247,7 @@ export default function Dashboard() {
                     {tx.status}
                   </div>
                 </div>
-                );
-              }) : (
+              )) : (
                 <div className="py-8 text-center text-sidebar-foreground text-sm">
                   No recent transactions.
                 </div>
