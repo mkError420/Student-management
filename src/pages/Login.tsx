@@ -43,60 +43,7 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (error) {
       console.error('Login error:', error);
-      
-      // Provide more specific error messages
-      if (error instanceof Error) {
-        if (error.message.includes('auth/configuration-not-found')) {
-          toast.error('Google authentication is not configured. Please enable Google Auth in Firebase console.');
-        } else if (error.message.includes('auth/popup-closed-by-user')) {
-          toast.error('Login popup was closed. Please try again.');
-        } else if (error.message.includes('auth/popup-blocked')) {
-          toast.error('Popup was blocked. Please allow popups and try again.');
-        } else if (error.message.includes('network')) {
-          toast.error('Network error. Please check your internet connection.');
-        } else {
-          toast.error(`Login failed: ${error.message}`);
-        }
-      } else {
-        toast.error('Failed to login. Please try again.');
-      }
-    }
-  };
-
-  // Fallback login for testing - creates a mock user
-  const handleTestLogin = async () => {
-    try {
-      const mockUser = {
-        uid: 'test-user-123',
-        email: 'test@example.com',
-        displayName: 'Test User',
-        photoURL: null
-      };
-
-      const userProfile = {
-        uid: mockUser.uid,
-        email: mockUser.email,
-        displayName: mockUser.displayName,
-        photoURL: mockUser.photoURL,
-        role: 'admin' as const,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Save to localStorage for auth context
-      localStorage.setItem('testUser', JSON.stringify(userProfile));
-
-      // Try to save to Firestore (will work if Firebase is configured)
-      try {
-        await setDoc(doc(db, 'users', mockUser.uid), userProfile);
-      } catch (firestoreError) {
-        console.warn('Firestore not available, using localStorage only:', firestoreError);
-      }
-
-      toast.success(`Test login successful! Welcome ${mockUser.displayName}!`);
-      navigate(from, { replace: true });
-    } catch (error) {
-      console.error('Test login error:', error);
-      toast.error('Test login failed. Please check Firebase configuration.');
+      toast.error('Failed to login. Please try again.');
     }
   };
 
@@ -134,14 +81,6 @@ export default function Login() {
               className="w-5 h-5 mr-3"
             />
             Continue with Google
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="w-full h-12 text-white font-medium border-border bg-amber-600/20 hover:bg-amber-600/30 transition-all"
-            onClick={handleTestLogin}
-          >
-            Test Login (Admin)
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4 text-center">
