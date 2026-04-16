@@ -85,6 +85,17 @@ export default function Dashboard() {
       setUpcomingExams(exams);
     });
 
+    return () => {
+      unsubscribeStudents();
+      unsubscribeClasses();
+      unsubscribe();
+    };
+  }, []);
+
+  // Separate useEffect for transactions that depends on students and classes
+  useEffect(() => {
+    if (students.length === 0 || classes.length === 0) return;
+
     const transactionsQuery = query(
       collection(db, 'fees'),
       orderBy('date', 'desc'),
@@ -107,9 +118,6 @@ export default function Dashboard() {
     });
 
     return () => {
-      unsubscribeStudents();
-      unsubscribeClasses();
-      unsubscribe();
       unsubscribeTransactions();
     };
   }, [students, classes]);
