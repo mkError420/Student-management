@@ -1,45 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: users
-    // Fields: uid, email, displayName, role (admin, teacher, parent, student), createdAt
-    //
-    // Collection: students
-    // Fields: name, rollNumber, classId, guardianPhone, status, etc.
-    //
-    // Collection: attendance
-    // Fields: studentId, classId, date, status, markedBy
-    //
-    // Collection: fees
-    // Fields: studentId, amount, type, status, date
-    //
-    // Collection: exams
-    // Fields: subject, classId, date, time, type, status, totalMarks, createdAt
-    //
-    // Collection: results
-    // Fields: studentId, studentName, examId, marksObtained, grade, remarks, updatedAt
-    //
-    // Collection: library_books
-    // Fields: title, author, total, available, isbn, category
-    //
-    // Collection: library_issues
-    // Fields: bookId, bookTitle, studentId, studentName, studentClass, issueDate, dueDate, returnDate, status
-    //
-    // Collection: staff
-    // Fields: name, email, role, department, baseSalary, joinDate, status
-    //
-    // Collection: payroll
-    // Fields: staffId, month, year, netSalary, status
-    //
-    // Collection: notifications
-    // Fields: recipientId, title, message, type, read, createdAt
-    //
-    // ===============================================================
-
     // Helper Functions
     function isAuthenticated() {
       return request.auth != null;
@@ -73,78 +34,84 @@ service cloud.firestore {
       return hasRole('student');
     }
 
-    // Domain Validators
-    function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email', 'role']) &&
-             data.role in ['admin', 'teacher', 'parent', 'student'];
-    }
-
-    // Rules
+    // Users Collection
     match /users/{uid} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data) && (request.resource.data.role != 'admin' || isAdmin());
-      allow update: if isAuthenticated() && (isOwner(uid) || isAdmin()) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+      allow create: if isAuthenticated() && isOwner(uid);
+      allow update: if isAuthenticated() && (isOwner(uid) || isAdmin());
     }
 
+    // Students Collection
     match /students/{studentId} {
       allow read: if isAdmin() || isTeacher() || (isParent() && resource.data.parentId == request.auth.uid) || (isStudent() && studentId == request.auth.uid);
       allow write: if isAdmin() || isTeacher();
     }
 
+    // Classes Collection
     match /classes/{classId} {
       allow read: if isAdmin() || isTeacher();
       allow write: if isAdmin() || isTeacher();
     }
 
+    // Teachers Collection
     match /teachers/{teacherId} {
       allow read: if isAdmin() || isTeacher();
       allow write: if isAdmin();
     }
 
+    // Attendance Collection
     match /attendance/{id} {
       allow read: if isAuthenticated();
       allow write: if isAdmin() || isTeacher();
     }
 
+    // Fees Collection
     match /fees/{id} {
       allow read: if isAdmin() || (isParent() && get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.parentId == request.auth.uid);
       allow write: if isAdmin();
     }
 
+    // Exams Collection
     match /exams/{id} {
       allow read: if isAuthenticated();
       allow write: if isAdmin() || isTeacher();
     }
 
+    // Results Collection
     match /results/{id} {
       allow read: if isAdmin() || isTeacher() || (isParent() && get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.parentId == request.auth.uid) || (isStudent() && resource.data.studentId == request.auth.uid);
       allow write: if isAdmin() || isTeacher();
     }
 
+    // Library Books Collection
     match /library_books/{id} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
+    // Library Issues Collection
     match /library_issues/{id} {
       allow read: if isAdmin() || isTeacher() || isOwner(resource.data.studentId);
       allow write: if isAdmin();
     }
 
+    // Staff Collection
     match /staff/{id} {
       allow read: if isAdmin() || isTeacher();
       allow write: if isAdmin();
     }
 
+    // Payroll Collection
     match /payroll/{id} {
       allow read: if isAdmin() || isOwner(resource.data.staffId);
       allow write: if isAdmin();
     }
 
+    // Notifications Collection
     match /notifications/{id} {
       allow read: if isOwner(resource.data.recipientId);
       allow create: if isAdmin() || isTeacher();
-      allow update: if isOwner(resource.data.recipientId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow update: if isOwner(resource.data.recipientId);
     }
   }
 }
