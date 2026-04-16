@@ -79,6 +79,16 @@ service cloud.firestore {
              data.role in ['admin', 'teacher', 'parent', 'student'];
     }
 
+    function isValidExam(data) {
+      return data.keys().hasAll(['subject', 'classId', 'date', 'time', 'type', 'status', 'totalMarks']) &&
+             data.totalMarks is number && data.totalMarks > 0;
+    }
+
+    function isValidResult(data) {
+      return data.keys().hasAll(['studentId', 'examId', 'marksObtained', 'grade']) &&
+             data.marksObtained is number;
+    }
+
     // Rules
     match /users/{uid} {
       allow read: if isAuthenticated();
